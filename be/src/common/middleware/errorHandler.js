@@ -23,10 +23,13 @@ const errorHandler = (err, req, res, next) => {
     err instanceof Sequelize.ConnectionError ||
     err instanceof Sequelize.ConnectionRefusedError
   ) {
+    console.error(err)
     return res.status(500).json({ message: 'Database connection error' });
   } else if (err instanceof Sequelize.TimeoutError) {
+    console.error(err)
     return res.status(504).json({ message: 'Database query timeout' });
   } else {
+    console.error(err)
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
