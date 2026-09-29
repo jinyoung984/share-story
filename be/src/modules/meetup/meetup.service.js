@@ -1,5 +1,6 @@
 const db = require('../../models/index');
 const { Op } = require('sequelize');
+const { sendMail } = require('../../common/services/mailer.service');
 
 const throwHttpError = (status, message) => {
   const error = new Error(message);
@@ -181,9 +182,44 @@ async function listMeetups({ page = 1, limit = 10, keyword, status }) {
       'status',
       'created_at'
     ],
+    include: [
+      { model: db.User, attributes: ['name'] },
+      // 목록에는 회차 경계 계산용 세션 정보를 포함한다.
+      {
+        model: db.Session,
+        required: false,
+        where: { status: { [Op.ne]: 'CANCELLED' } },
+        attributes: ['session_number', 'sch_date', 'sch_day', 'sch_time']
+      }
+    ],
     order: [['created_at', 'DESC']],
     offset: (safePage - 1) * safeLimit,
-    limit: safeLimit
+    limit: safeLimit,
+    distinct: true
+  });
+
+  const items = rows.map((meetup) => {
+    const orderedSessions = (meetup.Sessions || [])
+      .slice()
+      .sort((left, right) => Number(left.session_number) - Number(right.session_number));
+    const startSession = orderedSessions[0] || null;
+    const endSession = orderedSessions[orderedSessions.length - 1] || null;
+    return {
+      meetup_id: meetup.meetup_id,
+      title: meetup.title,
+      book_title: meetup.book_title,
+      book_image_url: meetup.book_image_url,
+      description: meetup.description,
+      min_capacity: meetup.min_capacity,
+      max_capacity: meetup.max_capacity,
+      deadline: meetup.deadline,
+      status: meetup.status,
+      leader_name: meetup.User?.name || null,
+      sch_st_date: startSession?.sch_date || null,
+      sch_ed_date: endSession?.sch_date || null,
+      sch_day: startSession?.sch_day || null,
+      sch_time: startSession?.sch_time || null
+    };
   });
 
   return {
@@ -191,7 +227,7 @@ async function listMeetups({ page = 1, limit = 10, keyword, status }) {
     limit: safeLimit,
     total: count,
     nextPage: safePage * safeLimit < count ? safePage + 1 : null,
-    items: rows
+    items
   };
 }
 
@@ -206,7 +242,17 @@ async function getMeetupDetail({ meetupId }) {
   const sessions = await db.Session.findAll({
     where: { meetup_id: meetupId },
     order: [['session_number', 'ASC']],
-    attributes: ['session_id', 'session_number', 'topic', 'sch_date', 'sch_day', 'sch_time', 'status']
+    attributes: [
+      'session_id',
+      'session_number',
+      'topic',
+      'sch_date',
+      'sch_day',
+      'sch_time',
+      'sch_st_time',
+      'sch_ed_time',
+      'status'
+    ]
   });
 
   const applies = await db.Apply.findAll({
@@ -291,6 +337,22 @@ const formatDate = (date) => {
   return `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, '0')}-${`${d.getDate()}`.padStart(2, '0')}`;
 };
 
+const buildZoomMailTemplate = ({ userName, schDate, schDay, schTime, zoomUrl, zoomPassword }) => {
+  const subject = `[쉐어스토리] ${schDate} 모임 Zoom 접속 안내`;
+  const body = [
+    `${userName || '회원'}님, 안녕하세요.`,
+    '',
+    '다가오는 모임 Zoom 접속 정보를 안내드립니다.',
+    `- 모임 일정: ${schDate || '-'} ${schDay || ''} ${schTime || ''}`.trim(),
+    `- Zoom URL: ${zoomUrl}`,
+    `- Zoom 비밀번호: ${zoomPassword}`,
+    '',
+    '모임 시작 5분 전 미리 접속 부탁드립니다.',
+    '감사합니다.'
+  ].join('\n');
+  return { subject, body };
+};
+
 async function sendZoomMailBatch({ now = new Date() } = {}) {
   const today = formatDate(now);
   const twoDaysLater = formatDate(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000));
@@ -317,7 +379,7 @@ async function sendZoomMailBatch({ now = new Date() } = {}) {
     ]
   });
 
-  const targets = rows.map((logbook) => ({
+  const candidates = rows.map((logbook) => ({
     user_name: logbook.Apply?.User?.name || null,
     user_email: logbook.Apply?.User?.email || null,
     zoom_url: logbook.Session?.zoom_url || null,
@@ -327,7 +389,72 @@ async function sendZoomMailBatch({ now = new Date() } = {}) {
     sch_time: logbook.Session?.sch_time || null
   }));
 
-  return { processed_count: targets.length, targets };
+  const sendableTargets = [];
+  const skippedTargets = [];
+
+  for (const candidate of candidates) {
+    const missingFields = [];
+    if (!candidate.user_email) missingFields.push('user_email');
+    if (!candidate.zoom_url) missingFields.push('zoom_url');
+    if (!candidate.zoom_password) missingFields.push('zoom_password');
+
+    if (missingFields.length > 0) {
+      skippedTargets.push({
+        ...candidate,
+        skipped_reason: `missing:${missingFields.join(',')}`
+      });
+      continue;
+    }
+
+    const template = buildZoomMailTemplate({
+      userName: candidate.user_name,
+      schDate: candidate.sch_date,
+      schDay: candidate.sch_day,
+      schTime: candidate.sch_time,
+      zoomUrl: candidate.zoom_url,
+      zoomPassword: candidate.zoom_password
+    });
+
+    sendableTargets.push({
+      ...candidate,
+      mail_subject: template.subject,
+      mail_body: template.body
+    });
+  }
+
+  const sentTargets = [];
+  const failedTargets = [];
+
+  for (const target of sendableTargets) {
+    try {
+      const result = await sendMail({
+        to: target.user_email,
+        subject: target.mail_subject,
+        text: target.mail_body
+      });
+
+      sentTargets.push({
+        ...target,
+        message_id: result.messageId || null,
+        accepted: result.accepted || []
+      });
+    } catch (error) {
+      failedTargets.push({
+        ...target,
+        failed_reason: error.message
+      });
+    }
+  }
+
+  return {
+    processed_count: sentTargets.length,
+    total_candidate_count: candidates.length,
+    skipped_count: skippedTargets.length,
+    failed_count: failedTargets.length,
+    targets: sentTargets,
+    skipped_targets: skippedTargets,
+    failed_targets: failedTargets
+  };
 }
 
 async function closePastSessions({ now = new Date() } = {}) {

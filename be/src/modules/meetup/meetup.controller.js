@@ -6,6 +6,8 @@ const {
 const meetupService = require('./meetup.service');
 
 const getLoginUserId = (req) => req.user?.user_id || req.user?.id || req.user_id;
+const getRequestUserId = (req, bodyField = 'user_id') =>
+  getLoginUserId(req) || (process.env.NODE_ENV === 'development' ? req.body?.[bodyField] : undefined);
 
 /* POST /meetup  모임 개설 */
 async function createMeetup(req, res, next) {
@@ -15,9 +17,7 @@ async function createMeetup(req, res, next) {
       return res.status(400).json({ success: false, message: '입력값을 확인해주세요.', errors });
     }
     // Allow a body-supplied leader only for local development tests.
-    const leaderId = getLoginUserId(req) || (
-      process.env.NODE_ENV === 'development' ? req.body.leader_id : undefined
-    );
+    const leaderId = getRequestUserId(req, 'leader_id');
     if (!leaderId) {
       return res.status(400).json({ success: false, message: 'leader_id가 필요합니다.' });
     }
@@ -44,9 +44,9 @@ async function updateMeetup(req, res) {
     if (errors.length > 0) {
       return res.status(400).json({ success: false, message: '입력값을 확인해주세요.', errors });
     }
+    console.log('Updating meetup with meetupId:', req.params.meetup_id, 'and body:', req.body);
+    const userId = getRequestUserId(req); // 로그인 개발 전에는 body.user_id로 테스트
 
-    //const userId = getLoginUserId(req); //로그인 user정보 확인 조회 서비스
-    const userId = 'dev-meetup-20260927124149-01'; // 강제세팅 user기능 개발 완료후 삭제
     if (!userId) {
       return res.status(401).json({ success: false, message: '사용자 인증 정보가 부족합니다.' });
     }
@@ -102,8 +102,7 @@ async function getMeetupDetail(req, res) {
 /* POST /meetup/:meetup_id/apply  모임 가입 신청*/
 async function applyMeetup(req, res) {
   try {
-    //const userId = getLoginUserId(req);
-    const userId = 'dev-meetup-20260927124149-05';// userID의 값 체크시에 로그인 userId를 체크하므로 강제세팅 user기능 개발 완료후 삭제 
+    const userId = getRequestUserId(req);
     const meetupId = Number(req.params.meetup_id);
 
     const errors = validateApplyMeetup({ userId, meetupId, body: req.body });
