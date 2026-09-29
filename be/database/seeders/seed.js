@@ -1,12 +1,19 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+require('dotenv').config({
+  path: path.resolve(__dirname, '../../.env'),
+});
 
 const bcrypt = require('bcrypt');
 const { User, sequelize } = require('../../src/models');
 
-// API 테스트용 일반 회원. 캡틴 지정과 크루 가입은 API를 통해 진행합니다.
+// API 테스트용 일반 회원.
+// 캡틴 지정과 크루 가입은 API를 통해 진행합니다.
+//
+// 실행:
 // npm run seed
-// 공통 로그인 비밀번호: Test1234!
+//
+// 공통 로그인 비밀번호:
+// Test1234!
 const users = [
   {
     user_id: 'test_user_1',
@@ -42,26 +49,48 @@ const users = [
 
 async function seed() {
   try {
+    // 1. DB 연결 확인
     await sequelize.authenticate();
-    const saltRounds = parseInt(process.env.SALT_ROUND, 10) || 10;
+    console.log('DB 연결 완료');
 
+    // 2. Sequelize 모델을 기준으로 테이블 생성
+    // force: false이므로 기존 테이블/데이터를 삭제하지 않습니다.
+    await sequelize.sync({
+      force: false,
+      logging: false,
+    });
+    console.log('DB 테이블 준비 완료');
+
+    // 3. 비밀번호 암호화 설정
+    const saltRounds = parseInt(process.env.SALT_ROUNDS, 10) || 10;
+
+    // 4. 테스트 회원 생성
     const results = await sequelize.transaction(async (transaction) => {
       const results = [];
 
       for (const user of users) {
         const [, created] = await User.findOrCreate({
-          where: { user_id: user.user_id },
+          where: {
+            user_id: user.user_id,
+          },
+
           defaults: {
             ...user,
             password: await bcrypt.hash('Test1234!', saltRounds),
             created_user_id: user.user_id,
             updated_user_id: user.user_id,
           },
-          // 재실행 시 삭제된 회원을 포함해 기존 계정을 변경하지 않습니다.
+
+          // soft delete된 회원도 기존 회원으로 판단합니다.
           paranoid: false,
+
           transaction,
         });
-        results.push({ user_id: user.user_id, status: created ? '생성' : '기존 회원 유지' });
+
+        results.push({
+          user_id: user.user_id,
+          status: created ? '생성' : '기존 회원 유지',
+        });
       }
 
       return results;
@@ -73,6 +102,7 @@ async function seed() {
     console.error('회원 시드 실패:', error.message);
     process.exitCode = 1;
   } finally {
+    // seed 실행 후 DB 연결 종료
     await sequelize.close();
   }
 }
@@ -81,4 +111,7 @@ if (require.main === module) {
   seed();
 }
 
-module.exports = { users, seed };
+module.exports = {
+  users,
+  seed,
+};
