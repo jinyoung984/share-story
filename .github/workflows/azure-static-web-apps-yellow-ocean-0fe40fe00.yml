@@ -6,7 +6,7 @@ on:
       - dev
     paths:
       - 'fe/**'
-      - '.github/workflows/fe.yml'
+      - '.github/workflows/azure-static-web-apps-yellow-ocean-0fe40fe00.yml'
   workflow_dispatch:
 
 jobs:
