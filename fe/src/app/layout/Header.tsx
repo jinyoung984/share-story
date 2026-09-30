@@ -47,6 +47,10 @@ function Header() {
         </nav>
 
         <div className={styles.desktopActions}>
+          <Link to="/login" className={styles.signupLink}>
+            로그인
+          </Link>
+
           <Link to="/signup" className={styles.signupLink}>
             회원가입
           </Link>

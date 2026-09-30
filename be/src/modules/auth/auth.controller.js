@@ -34,10 +34,23 @@ const createHash = async (password) => {
   return hashed;
 };
 
+//회원가입
 const signUp = async (req, res, next) => {
   try {
-    console.log('▶ [Postman 요청 수신] Body:', req.body);
-    const { name, password, user_id } = req.body;
+    const {
+      name,
+      password,
+      user_id,
+      gender,
+      age_group,
+      readingAmount,
+      genres,
+      social_provider,
+      social_id,
+      updated_user_id,
+      email,
+      created_user_id,
+    } = req.body;
 
     // 유효성 검사
     if (!user_id || !password || !name) {
@@ -56,26 +69,39 @@ const signUp = async (req, res, next) => {
     const newPassword = await createHash(password);
 
     // DB 생성
-    const result = await User.create({ name: name, password: newPassword, user_id: user_id });
+    const result = await User.create({
+      name,
+      password: newPassword,
+      user_id,
+      gender,
+      age_group,
+      monthly_reading_volume: readingAmount,
+      genre_1: genres[0],
+      genre_2: genres[1],
+      social_provider,
+      social_id,
+      updated_user_id: user_id,
+      email,
+      created_user_id: user_id,
+    });
 
     // 응답 전달
-    res
-      .status(201)
-      .json({
-        success: true,
-        document: { name: result.name, user_id: result.user_id },
-        message: '회원가입에 완료되었습니다.',
-      });
+    res.status(201).json({
+      success: true,
+      document: { name: result.name, user_id: result.user_id },
+      message: '회원가입에 완료되었습니다.',
+    });
   } catch (error) {
     console.error('회원가입 처리 중 에러 발생:', error);
     next(error);
   }
 };
 
-const signIn = async (req, res, next) => {
+//로그인
+const login = async (req, res, next) => {
   try {
     const { password, user_id } = req.body;
-
+    console.log(`be login controller user_id ===> ${user_id}`);
     const user = await User.findOne({ where: { user_id: user_id } });
 
     //이메일체크, 비밀번호 확인
@@ -87,26 +113,37 @@ const signIn = async (req, res, next) => {
     //토큰생성, payload는 {user_id }
     const token = jwt.sign({ user_id }, secret);
     //console.log(`token ===> ${token}`);
-
-    res.status(200).json({ success: true, token: token, message: '로그인에 완료되었습니다.' });
+    console.log(`be login controller token ===> ${token}`);
+    return res
+      .status(200)
+      .json({ success: true, token: token, message: '로그인에 완료되었습니다.', document: user });
   } catch (error) {
-    //console.log(`error ===> ${error}`);
+    console.log(`error ===> ${error}`);
     next(error, req, res);
   }
 };
 
+//아이디 중복확인
 const getMyInfo = async (req, res, next) => {
   try {
     const { user_id } = req.body;
-    const user = await User.findOne({ where: { user_id: user_id } });
+    console.log(`getMyInfo user_id: ${user_id}`);
+    const count = await User.count({ where: { user_id: user_id } });
+    console.log(`getMyInfo count: ${count}`);
 
-    res.status(200).json({ success: true, message: '조회 되었습니다.', user });
+    return res
+      .status(200)
+      .json({
+        message: count === 0 ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.',
+        count,
+      });
   } catch (error) {
-    //console.log(`error ===> ${error}`);
+    console.log(`error ===> ${error}`);
     next(error, req, res);
   }
 };
 
+//회원정보 수정
 const updateMyInfo = async (req, res, next) => {
   try {
     const {
@@ -138,11 +175,13 @@ const updateMyInfo = async (req, res, next) => {
       return res.status(400).json({ success: false, message: `회원정보가 잘못되었습니다.` });
     }
 
-    res.status(200).json({ success: true, token: token, message: '로그인에 완료되었습니다.' });
+    return res
+      .status(200)
+      .json({ success: true, token: token, message: '로그인에 완료되었습니다.' });
   } catch (error) {
-    //console.log(`error ===> ${error}`);
+    console.log(`error ===> ${error}`);
     next(error, req, res);
   }
 };
 
-module.exports = { getAuth, signUp, signIn, getMyInfo, updateMyInfo };
+module.exports = { getAuth, signUp, login, getMyInfo, updateMyInfo };

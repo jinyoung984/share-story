@@ -20,7 +20,7 @@ function PasswordSection({
     <FormSection number={2} title="비밀번호 / 비밀번호 확인">
       <div className={styles.fieldGroup}>
         <TextInput
-          id="signup-password"
+          id="password"
           aria-label="비밀번호"
           name="password"
           type="password"
@@ -32,7 +32,7 @@ function PasswordSection({
         />
 
         <TextInput
-          id="signup-password-confirm"
+          id="password-confirm"
           aria-label="비밀번호 확인"
           name="passwordConfirm"
           type="password"

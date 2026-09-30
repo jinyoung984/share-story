@@ -1,6 +1,6 @@
 export type Gender = '남' | '여';
 
-export type PreferredCategory =
+export type PreferredGenre =
   | 'NOVEL'
   | 'ECONOMY_BUSINESS'
   | 'SELF_DEVELOPMENT'
@@ -17,18 +17,18 @@ export type PreferredCategory =
 export type ReadingAmount = '1~2권' | '3~4권' | '4~5권' | '5~6권';
 
 export interface SignupForm {
-  id: string;
+  user_id: string;
   password: string;
   passwordConfirm: string;
 
   emailId: string;
   emailDomain: string;
 
-  nickname: string;
+  name: string;
 
   gender: Gender | '';
-  birthday: string;
+  age_group: string;
 
-  categories: PreferredCategory[];
+  genres: PreferredGenre[];
   readingAmount: ReadingAmount | '';
 }
