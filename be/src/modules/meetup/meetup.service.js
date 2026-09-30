@@ -280,6 +280,7 @@ async function getMeetupDetail({ meetupId }) {
   return {
     meetup: {
       meetup_id: meetup.meetup_id,
+      leader_id: meetup.leader_id,
       title: meetup.title,
       description: meetup.description,
       book_title: meetup.book_title,
