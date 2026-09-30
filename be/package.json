@@ -10,7 +10,12 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node database/seeders/seed.js",
-    "db:check": "node scripts/db-check.js"
+    "db:check": "node scripts/db-check.js",
+    "db:check:local": "node --env-file=.env.local scripts/db-check.js",
+    "dev:local": "nodemon --exec \"node --env-file=.env.local\" src/server.js",
+    "seed:local": "node --env-file=.env.local database/seeders/seed.js",
+    "test": "node --test tests/unit/member.test.js",
+    "test:db": "node --test tests/integration/db-check.test.js"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.33.0",
