@@ -18,12 +18,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 // urlencoded 할때 { extended : false } 옵션은 권장사항.
 
-// src/app.js 상단 또는 중간에 테스트용 헬스체크 라우트 추가
-app.get('/ping', (req, res) => {
-  console.log('핑 요청 들어옴!');
-  res.send('pong');
-});
-
 // Meetup API
 app.use('/meetup', meetupRouter);
 

@@ -8,7 +8,18 @@ interface EmailSectionProps {
   onEmailDomainChange: (value: string) => void;
 }
 
-const EMAIL_DOMAINS = ['gmail.com', 'naver.com', 'kakao.com', 'daum.net'];
+const EMAIL_DOMAINS = [
+                    'gmail.com'
+                  , 'naver.com'
+                  , 'kakao.com'
+                  , 'daum.net'
+                  , 'hanmail.net'
+                  , 'nate.com'
+                  , 'outlook.com'
+                  , 'yahoo.com'
+                  , 'icloud.com'
+                  , 'zum.com'
+                ];
 
 function EmailSection({
   emailId,
@@ -20,7 +31,7 @@ function EmailSection({
     <FormSection number={3} title="이메일">
       <div className={styles.row}>
         <TextInput
-          id="signup-email-id"
+          id="emailId"
           name="emailId"
           type="text"
           value={emailId}
@@ -35,7 +46,7 @@ function EmailSection({
         </span>
 
         <Select
-          id="signup-email-domain"
+          id="emailDomain"
           name="emailDomain"
           value={emailDomain}
           onChange={(event) => onEmailDomainChange(event.target.value)}

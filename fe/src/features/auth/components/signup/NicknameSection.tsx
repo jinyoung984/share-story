@@ -2,23 +2,23 @@ import { FormSection, TextInput } from '../../../../shared/ui';
 import styles from './SignupFormSection.module.css';
 
 interface NicknameSectionProps {
-  nickname: string;
-  onChange: (value: string) => void;
+  name: string;
+  onNameChange: (value: string) => void;
 }
 
-function NicknameSection({ nickname, onChange }: NicknameSectionProps) {
+function NicknameSection({ name, onNameChange }: NicknameSectionProps) {
   return (
     <FormSection number={4} title="닉네임">
       <TextInput
-        id="signup-nickname"
+        id="name"
         aria-label="닉네임"
-        name="nickname"
+        name="name"
         type="text"
-        value={nickname}
-        onChange={(event) => onChange(event.target.value)}
+        value={name}
+        onChange={(event) => onNameChange(event.target.value)}
         placeholder="닉네임을 입력해 주세요"
         className={styles.input}
-        autoComplete="nickname"
+        autoComplete="name"
       />
     </FormSection>
   );
