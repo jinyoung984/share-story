@@ -1,4 +1,3 @@
-import { getMeetup } from '../../meetup';
 import type { CaptainJournalItem, CrewJournalItem } from '../types/journal';
 
 export const crewJournalMocks: CrewJournalItem[] = [
@@ -64,15 +63,3 @@ export const captainJournalMocks: CaptainJournalItem[] = [
   },
 ];
 
-// Use the shared identity while retaining journal-specific progress and schedule fields.
-for (const item of crewJournalMocks) {
-  const meetup = getMeetup(item.id);
-  if (meetup) {
-    item.title = meetup.title;
-    item.book = meetup.book;
-  }
-}
-for (const item of captainJournalMocks) {
-  const meetup = getMeetup(item.id);
-  if (meetup) item.title = meetup.title;
-}

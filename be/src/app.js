@@ -1,7 +1,8 @@
 const express = require('express');
 const logger = require('morgan');
+const cors = require('cors');
 require('dotenv').config();
-
+const PORT = process.env.PORT || 3000;
 // 공통 middleware
 const errorHandler = require('./common/middleware/errorHandler');
 // const authorization = require('./common/middleware/authorization');
@@ -9,10 +10,19 @@ const errorHandler = require('./common/middleware/errorHandler');
 // 기능별 router
 const meetupRouter = require('./modules/meetup/meetup.routes');
 const authRouter = require('./modules/auth/auth.routes');
+const sessionRoutes = require('./modules/session/session.routes');
 
 const app = express();
 
 app.use(logger('dev'));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false,
+  }),
+);
 // 1. JSON 형태의 body 파싱
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -24,11 +34,17 @@ app.get('/ping', (req, res) => {
   res.send('pong');
 });
 
+app.use('/session', sessionRoutes);
+
 // Meetup API
 app.use('/meetup', meetupRouter);
 
 app.use('/auth', authRouter);
 // Error Handler는 일반 route 등록 이후에 위치
 app.use(errorHandler);
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
 
 module.exports = app;

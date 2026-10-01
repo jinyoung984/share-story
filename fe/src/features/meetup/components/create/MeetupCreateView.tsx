@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { MeetupForm, MeetupSession } from '../../types/meetupForm';
-import { validateMeetup } from '../../lib/meetupValidation';
+import { createMeetup } from '../../api/meetupApi';
+import { toCreateMeetupRequest, addHoursToTime } from '../../lib/meetupMapper';
+import { validateMeetup, validateLeaderUserIdentity } from '../../lib/meetupValidation';
 import { Button, Notice } from '../../../../shared/ui';
 
 import MeetupInfoSection from './MeetupInfoSection';
@@ -11,6 +13,9 @@ import RecruitConditionSection from './RecruitConditionSection';
 import SessionScheduleSection from './SessionScheduleSection';
 
 import styles from './MeetupCreateView.module.css';
+
+const REQUIRED_SESSION_COUNT = 4;
+
 
 const INITIAL_FORM: MeetupForm = {
   bookTitle: '',
@@ -24,18 +29,18 @@ const INITIAL_FORM: MeetupForm = {
   payment: '일시납',
 };
 
-const INITIAL_SESSIONS: MeetupSession[] = [
-  {
-    number: 1,
-    date: '',
-    time: '',
-    topic: '',
-  },
-];
+const INITIAL_SESSIONS: MeetupSession[] = Array.from({ length: REQUIRED_SESSION_COUNT }, (_, index) => ({
+  number: index + 1,
+  date: '',
+  time: '',
+  endTime: '',
+  topic: '',
+}));
 
 function MeetupCreateView() {
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [form, setForm] = useState<MeetupForm>(INITIAL_FORM);
   const [sessions, setSessions] = useState<MeetupSession[]>(INITIAL_SESSIONS);
@@ -53,30 +58,32 @@ function MeetupCreateView() {
     value: string,
   ) => {
     setSessions((prev) =>
-      prev.map((session, currentIndex) =>
-        currentIndex === index
-          ? {
-              ...session,
-              [field]: value,
-            }
-          : session,
-      ),
+      prev.map((session, currentIndex) => {
+        if (currentIndex !== index) return session;
+        const updated = { ...session, [field]: value };
+        // 시작 시간이 바뀌면 종료 시간을 2시간 뒤로 자동 갱신한다.
+        if (field === 'time') updated.endTime = addHoursToTime(value, 2);
+        return updated;
+      }),
     );
   };
 
   const handleAddSession = () => {
+    if (sessions.length >= REQUIRED_SESSION_COUNT) return;
     setSessions((prev) => [
       ...prev,
       {
         number: prev.length + 1,
         date: '',
         time: '',
+        endTime: '',
         topic: '',
       },
     ]);
   };
 
   const handleRemoveSession = (index: number) => {
+    if (sessions.length <= REQUIRED_SESSION_COUNT) return;
     setSessions((prev) =>
       prev
         .filter((_, currentIndex) => currentIndex !== index)
@@ -91,16 +98,49 @@ function MeetupCreateView() {
     navigate('/meetups');
   };
 
-  const handleSubmit = () => {
-    setMessage(
-      validateMeetup(form, sessions) ??
-        '모임 개설은 아직 준비 중입니다. 모임이 생성되지 않았습니다.',
-    );
+  const handleSubmit = async () => {
+    const validationMessage = validateMeetup(form, sessions);
+    if (validationMessage) {
+      setMessage(validationMessage);
+      return;
+    }
+
+    const leaderId =
+      localStorage.getItem('user_id') || localStorage.getItem('leader_id') || import.meta.env.VITE_DEV_LEADER_ID || '';
+    const userId =
+      localStorage.getItem('user_id') ||
+      localStorage.getItem('leader_id') ||
+      import.meta.env.VITE_DEV_USER_ID ||
+      import.meta.env.VITE_DEV_LEADER_ID ||
+      '';
+
+    const identityMessage = validateLeaderUserIdentity(leaderId, userId);
+    if (identityMessage) {
+      setMessage(identityMessage);
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setMessage('');
+      const payload = toCreateMeetupRequest(form, sessions, leaderId, userId);
+      if (import.meta.env.DEV) {
+        console.log('[MeetupCreate] POST /meetup payload', payload);
+      }
+      await createMeetup(payload);
+      navigate('/meetups');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '모임 개설 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <div className={styles.headerInner}>
+          <input type="hidden" id="leader_id" value="test_user_1"/>
+          <input type="hidden" id="user_id" value="test_user_1"/>
           <button type="button" className={styles.backButton} onClick={handleCancel}>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -132,6 +172,8 @@ function MeetupCreateView() {
           onChange={handleSessionChange}
           onAdd={handleAddSession}
           onRemove={handleRemoveSession}
+          fixedCount={REQUIRED_SESSION_COUNT}
+          editableEndTime={false}
         />
 
         <PaymentSection form={form} onChange={handleFormChange} />
@@ -143,8 +185,8 @@ function MeetupCreateView() {
             취소
           </Button>
 
-          <Button type="submit" className={styles.submitButton}>
-            개설하기
+          <Button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+            {isSubmitting ? '개설 중...' : '개설하기'}
           </Button>
         </div>
       </form>

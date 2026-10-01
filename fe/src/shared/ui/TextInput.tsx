@@ -1,8 +1,10 @@
-import type { InputHTMLAttributes } from 'react';
+import { forwardRef, type InputHTMLAttributes } from 'react';
 import styles from './UI.module.css';
-export default function TextInput({
-  className = '',
-  ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={`${styles.control} ${className}`} {...props} />;
-}
+
+const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  ({ className = '', ...props }, ref) => (
+    <input ref={ref} className={`${styles.control} ${className}`} {...props} />
+  ),
+);
+
+export default TextInput;

@@ -50,30 +50,18 @@
   background: linear-gradient(to top, rgb(0 0 0 / 40%), transparent);
 }
 
-.status,
-.genre {
+.status {
   position: absolute;
   top: 0.75rem;
-
-  padding: 0.25rem 0.625rem;
-
-  border-radius: 9999px;
-
-  font-size: 0.75rem;
-}
-
-.status {
   left: 0.75rem;
 
-  font-weight: 600;
-}
-
-.genre {
-  right: 0.75rem;
+  padding: 0.25rem 0.5rem;
 
   color: var(--color-navy);
   background-color: rgb(255 255 255 / 90%);
+  border-radius: 9999px;
 
+  font-size: 0.75rem;
   font-weight: 500;
 }
 

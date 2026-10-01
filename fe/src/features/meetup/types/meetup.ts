@@ -4,7 +4,6 @@ export interface Meetup {
   id: number;
   title: string;
   captain: string;
-  genre: string;
   book: string;
   members: number | null;
   maxMembers: number;

@@ -6,10 +6,38 @@
   gap: 0.75rem;
 }
 
-.sessionRow {
+.sessionGuide {
+  margin: 0 0 0.75rem;
+
+  color: var(--color-control);
+
+  font-size: 0.75rem;
+}
+
+.sessionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  padding-bottom: 0.75rem;
+
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.sessionCard:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.sessionInfoRow {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.sessionTopicRow {
+  display: flex;
+  padding-left: 2rem;
 }
 
 .sessionNumber {
@@ -18,11 +46,11 @@
   align-items: center;
   justify-content: center;
 
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
 
-  color: var(--color-navy);
-  background-color: var(--color-surface);
+  color: var(--color-canvas);
+  background-color: var(--color-navy);
   border-radius: 50%;
 
   font-size: 0.75rem;
@@ -30,7 +58,7 @@
 }
 
 .sessionDateInput {
-  width: 6rem;
+  width: 9.5rem;
 
   padding: 0.5rem 0.625rem;
 
@@ -48,7 +76,7 @@
 }
 
 .sessionTimeInput {
-  width: 5rem;
+  width: 7.5rem;
 
   padding: 0.5rem 0.625rem;
 
@@ -88,6 +116,33 @@
 .sessionTimeInput:focus,
 .sessionTopicInput:focus {
   border-color: var(--color-ocean);
+}
+
+.sessionDayLabel {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 2.75rem;
+  padding: 0.5rem 0.5rem;
+
+  color: var(--color-navy);
+  background-color: var(--color-surface);
+  border-radius: 0.5rem;
+
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.sessionEndTimeLabel {
+  flex-shrink: 0;
+
+  color: var(--color-control);
+
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .removeButton {

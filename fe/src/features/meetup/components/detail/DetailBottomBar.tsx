@@ -3,10 +3,13 @@ import { Link } from 'react-router-dom';
 import styles from './DetailBottomBar.module.css';
 
 interface DetailBottomBarProps {
+  meetupId: number;
+  canEdit: boolean;
   onJoin: () => void;
+  isJoining?: boolean;
 }
 
-function DetailBottomBar({ onJoin }: DetailBottomBarProps) {
+function DetailBottomBar({ meetupId, canEdit, onJoin, isJoining = false }: DetailBottomBarProps) {
   return (
     <div className={styles.wrapper}>
       <div className={styles.inner}>
@@ -14,9 +17,22 @@ function DetailBottomBar({ onJoin }: DetailBottomBarProps) {
           목록으로
         </Link>
 
-        <button type="button" className={styles.joinButton} onClick={onJoin}>
-          항해 참여하기
-        </button>
+        {canEdit ? (
+          <Link to={`/meetups/${meetupId}/edit`} className={styles.editButton}>
+            항해수정
+          </Link>
+        ) : (
+          <button type="button" className={styles.editButton} disabled>
+            항해수정
+          </button>
+        )}
+
+        {/* leader_id 로그인 사용자는 본인 항해에 참여 신청할 수 없으므로 버튼을 노출하지 않는다. */}
+        {!canEdit && (
+          <button type="button" className={styles.joinButton} onClick={onJoin} disabled={isJoining}>
+            {isJoining ? '신청 중...' : '항해 참여하기'}
+          </button>
+        )}
       </div>
     </div>
   );

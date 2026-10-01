@@ -44,30 +44,6 @@
   font-size: 0.75rem;
 }
 
-.statList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.statRow {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-
-  color: var(--color-secondary);
-
-  font-size: 0.75rem;
-}
-
-.count {
-  flex-shrink: 0;
-
-  color: var(--color-navy);
-
-  font-weight: 500;
-}
-
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr;

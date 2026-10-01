@@ -1,38 +1,50 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { meetupListMocks } from '../../mocks/meetupListMocks';
 import MeetupListItem from '../MeetupListItem';
-import type { MeetupGenreFilter } from '../../types/meetupList';
+import { getMeetups } from '../../api/meetupApi';
+import { mapMeetupListApiItem } from '../../lib/meetupMapper';
+import type { MeetupListItem as MeetupListItemType } from '../../types/meetupList';
 
 import styles from './MeetupListView.module.css';
 
-const GENRES: MeetupGenreFilter[] = [
-  '전체',
-  '현대소설',
-  '인문·철학',
-  '과학·기술',
-  '시·에세이',
-  '경제·경영',
-  '역사·문화',
-];
-
 function MeetupListView() {
   const [search, setSearch] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState<MeetupGenreFilter>('전체');
+  const [items, setItems] = useState<MeetupListItemType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const run = async () => {
+      try {
+        setIsLoading(true);
+        setErrorMessage('');
+        const apiItems = await getMeetups();
+        if (!isMounted) return;
+        setItems(apiItems.map(mapMeetupListApiItem));
+      } catch (error) {
+        if (!isMounted) return;
+        setErrorMessage(error instanceof Error ? error.message : '목록을 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredMeetups = useMemo(() => {
     const keyword = search.trim();
 
-    return meetupListMocks.filter((meetup) => {
-      const matchesGenre = selectedGenre === '전체' || meetup.genre === selectedGenre;
-
-      const matchesSearch =
-        keyword === '' || meetup.title.includes(keyword) || meetup.book.includes(keyword);
-
-      return matchesGenre && matchesSearch;
-    });
-  }, [search, selectedGenre]);
+    return items.filter(
+      (meetup) => keyword === '' || meetup.title.includes(keyword) || meetup.book.includes(keyword),
+    );
+  }, [items, search]);
 
   return (
     <div className={styles.page}>
@@ -70,24 +82,18 @@ function MeetupListView() {
           </Link>
         </div>
 
-        <div className={styles.genreFilters} aria-label="장르 필터">
-          {GENRES.map((genre) => (
-            <button
-              key={genre}
-              type="button"
-              className={`${styles.genreButton} ${
-                selectedGenre === genre ? styles.activeGenreButton : ''
-              }`}
-              onClick={() => setSelectedGenre(genre)}
-            >
-              {genre}
-            </button>
-          ))}
-        </div>
-
         <p className={styles.resultCount}>총 {filteredMeetups.length}개의 항해</p>
 
-        {filteredMeetups.length === 0 ? (
+        {isLoading ? (
+          <div className={styles.empty}>
+            <p className={styles.emptyTitle}>항해 목록을 불러오는 중입니다.</p>
+          </div>
+        ) : errorMessage ? (
+          <div className={styles.empty}>
+            <p className={styles.emptyTitle}>목록 조회에 실패했습니다.</p>
+            <p className={styles.emptyDescription}>{errorMessage}</p>
+          </div>
+        ) : filteredMeetups.length === 0 ? (
           <div className={styles.empty}>
             <div className={styles.emptyIcon} aria-hidden="true">
               ⚓

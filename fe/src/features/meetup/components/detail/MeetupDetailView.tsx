@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { getMeetupDetail } from '../../mocks/meetupCatalog';
+import { applyMeetup, getMeetupDetail } from '../../api/meetupApi';
+import type { MeetupDetail } from '../../types/meetupDetail';
 import { EmptyState, ActionLink, Notice } from '../../../../shared/ui';
-import { useState } from 'react';
 
 import CrewStatsSection from './CrewStatsSection';
 import DetailBottomBar from './DetailBottomBar';
@@ -19,8 +20,33 @@ function MeetupDetailView() {
 
   const id = Number(meetupId);
 
-  const meetup = getMeetupDetail(id);
+  const [meetup, setMeetup] = useState<MeetupDetail | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isJoining, setIsJoining] = useState(false);
   const [message, setMessage] = useState('');
+
+  const loginUserId =
+    localStorage.getItem('user_id') ||
+    localStorage.getItem('leader_id') ||
+    import.meta.env.VITE_DEV_USER_ID ||
+    import.meta.env.VITE_DEV_LEADER_ID;
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    getMeetupDetail(id)
+      .then((detail) => {
+        if (isMounted) setMeetup(detail);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  if (isLoading) return null;
   if (!meetup)
     return (
       <EmptyState
@@ -30,9 +56,31 @@ function MeetupDetailView() {
       />
     );
 
-  const handleJoin = () => {
-    // TODO: Meetup 참여 기능 연결
-    setMessage('참여 신청은 아직 준비 중입니다. 신청이 접수되지 않았습니다.');
+  const handleJoin = async () => {
+    const userId =
+      localStorage.getItem('user_id') ||
+      localStorage.getItem('leader_id') ||
+      import.meta.env.VITE_DEV_USER_ID ||
+      import.meta.env.VITE_DEV_LEADER_ID;
+
+    if (!userId) {
+      setMessage('참여 신청을 위해 localStorage user_id 또는 VITE_DEV_USER_ID 설정이 필요합니다.');
+      return;
+    }
+
+    try {
+      setIsJoining(true);
+      setMessage('');
+      await applyMeetup(id, userId);
+      setMessage('항해 참여 신청이 완료되었습니다.');
+
+      const refreshed = await getMeetupDetail(id);
+      if (refreshed) setMeetup(refreshed);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '참여 신청 중 오류가 발생했습니다.');
+    } finally {
+      setIsJoining(false);
+    }
   };
 
   return (
@@ -64,7 +112,12 @@ function MeetupDetailView() {
       </div>
 
       {message && <Notice>{message}</Notice>}
-      <DetailBottomBar onJoin={handleJoin} />
+      <DetailBottomBar
+        meetupId={meetup.id}
+        canEdit={Boolean(loginUserId && loginUserId === meetup.leaderId)}
+        onJoin={handleJoin}
+        isJoining={isJoining}
+      />
     </div>
   );
 }

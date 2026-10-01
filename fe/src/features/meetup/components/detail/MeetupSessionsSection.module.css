@@ -60,6 +60,26 @@
   font-size: 0.875rem;
 }
 
+.day {
+  flex-shrink: 0;
+
+  width: 3rem;
+
+  color: var(--color-control);
+
+  font-size: 0.8125rem;
+}
+
+.time {
+  flex-shrink: 0;
+
+  width: 6.5rem;
+
+  color: var(--color-secondary);
+
+  font-size: 0.8125rem;
+}
+
 .topic {
   min-width: 0;
 

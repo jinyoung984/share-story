@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getMeetup } from '../../../meetup';
+import type { MeetupListItem } from '../../../meetup/types/meetupList';
 import {
   PageContainer,
   PageHeading,
@@ -11,7 +13,25 @@ import {
 import { reviewEntries } from '../../mocks/reviewEntries';
 export default function ReviewListView() {
   const { meetupId } = useParams();
-  const meetup = getMeetup(Number(meetupId));
+  const [meetup, setMeetup] = useState<MeetupListItem | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    getMeetup(Number(meetupId))
+      .then((item) => {
+        if (isMounted) setMeetup(item);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [meetupId]);
+
+  if (isLoading) return null;
   if (!meetup)
     return (
       <EmptyState
