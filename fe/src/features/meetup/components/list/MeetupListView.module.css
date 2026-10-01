@@ -149,46 +149,6 @@
   background-color: var(--color-action-pressed);
 }
 
-/* Genre filters */
-
-.genreFilters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-
-  margin-bottom: 1.5rem;
-}
-
-.genreButton {
-  padding: 0.375rem 0.75rem;
-
-  color: var(--color-secondary);
-  background-color: var(--color-canvas);
-  border: 1px solid var(--color-divider);
-  border-radius: 9999px;
-
-  font-family: inherit;
-  font-size: 0.75rem;
-  font-weight: 500;
-
-  cursor: pointer;
-
-  transition:
-    color 0.2s ease,
-    background-color 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.genreButton:hover {
-  border-color: var(--color-navy);
-}
-
-.activeGenreButton {
-  color: var(--color-canvas);
-  background-color: var(--color-navy);
-  border-color: var(--color-navy);
-}
-
 /* Result */
 
 .resultCount {

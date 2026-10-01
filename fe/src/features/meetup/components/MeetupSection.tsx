@@ -1,11 +1,29 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import MeetupCard from './MeetupCard';
-import { meetupMocks } from '../mocks/meetupMocks';
+import { fetchMeetupSectionItems } from '../api/meetupApi';
+import type { Meetup } from '../types/meetup';
 
 import styles from './MeetupSection.module.css';
 
 function MeetupSection() {
+  const [meetups, setMeetups] = useState<Meetup[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchMeetupSectionItems()
+      .then((items) => {
+        if (isMounted) setMeetups(items);
+      })
+      .catch(() => {
+        if (isMounted) setMeetups([]);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <section className={styles.section}>
       <div className={styles.inner}>
@@ -21,7 +39,7 @@ function MeetupSection() {
         </div>
 
         <div className={styles.grid}>
-          {meetupMocks.map((meetup) => (
+          {meetups.map((meetup) => (
             <MeetupCard key={meetup.id} meetup={meetup} />
           ))}
         </div>

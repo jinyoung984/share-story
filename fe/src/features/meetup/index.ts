@@ -3,4 +3,4 @@ export { default as MeetupDetailView } from './components/detail/MeetupDetailVie
 export { default as MeetupEditView } from './components/edit/MeetupEditView';
 export { default as MeetupListView } from './components/list/MeetupListView';
 export { default as MeetupSection } from './components/MeetupSection';
-export { getMeetup, getMeetupDetail } from './mocks/meetupCatalog';
+export { getMeetup, getMeetupDetail } from './api/meetupApi';

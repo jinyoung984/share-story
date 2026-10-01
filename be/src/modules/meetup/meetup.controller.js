@@ -17,6 +17,7 @@ async function createMeetup(req, res, next) {
       return res.status(400).json({ success: false, message: '입력값을 확인해주세요.', errors });
     }
     // Allow a body-supplied leader only for local development tests.
+    // 항해 개설(create)에서는 leader_id와 user_id 일치 여부를 검증하지 않는다.
     const leaderId = getRequestUserId(req, 'leader_id');
     if (!leaderId) {
       return res.status(400).json({ success: false, message: 'leader_id가 필요합니다.' });

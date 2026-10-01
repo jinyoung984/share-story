@@ -1,4 +1,5 @@
 import type { MeetupStatItem, MeetupStats } from '../../types/meetupDetail';
+import DonutChart from './DonutChart';
 
 import styles from './CrewStatsSection.module.css';
 
@@ -40,15 +41,7 @@ function CrewStatsSection({ stats }: CrewStatsSectionProps) {
 
             <p className={styles.total}>{totalMembers}명</p>
 
-            <div className={styles.statList}>
-              {group.data.map((item) => (
-                <div key={item.label} className={styles.statRow}>
-                  <span>{item.label}</span>
-
-                  <span className={styles.count}>{item.count}명</span>
-                </div>
-              ))}
-            </div>
+            <DonutChart data={group.data} />
           </div>
         ))}
       </div>

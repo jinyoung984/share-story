@@ -111,6 +111,7 @@ async function updateMeetup({ meetupId, userId, payload }) {
   if (!meetup) {
     throwHttpError(404, '모임을 찾을 수 없습니다.');
   }
+  // leader_id(개설자) vs user_id(요청자) 비교는 수정 권한 검증 시에만 수행한다. (개설 시에는 검증하지 않음)
   if (meetup.leader_id !== userId) {
     throwHttpError(403, '모임 수정 권한이 없습니다.');
   }
@@ -278,6 +279,8 @@ async function getMeetupDetail({ meetupId }) {
       'sch_time',
       'sch_st_time',
       'sch_ed_time',
+      'zoom_url',
+      'zoom_password',
       'status',
     ],
   });

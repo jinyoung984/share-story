@@ -1,7 +1,13 @@
 export interface MeetupDetailSession {
+  sessionId: number;
   number: number;
   date: string;
+  rawDate: string;
+  time: string;
+  endTime: string;
   topic: string;
+  zoomUrl: string | null;
+  zoomPassword: string | null;
 }
 
 export interface MeetupStatItem {
@@ -23,6 +29,7 @@ export interface RelatedMeetup {
 
 export interface MeetupDetail {
   id: number;
+  leaderId: string;
   title: string;
   book: string;
   captain: string;

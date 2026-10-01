@@ -1,4 +1,5 @@
 import type { MeetupDetailSession } from '../../types/meetupDetail';
+import { toKoreanDay } from '../../lib/meetupMapper';
 
 import styles from './MeetupSessionsSection.module.css';
 
@@ -18,6 +19,12 @@ function MeetupSessionsSection({ sessions, price }: MeetupSessionsSectionProps) 
             <div className={styles.sessionNumber}>{session.number}</div>
 
             <span className={styles.date}>{session.date}</span>
+
+            <span className={styles.day}>{toKoreanDay(session.rawDate) || '요일 미정'}</span>
+
+            <span className={styles.time}>
+              {session.time ? `${session.time}${session.endTime ? ` - ${session.endTime}` : ''}` : '시간 미정'}
+            </span>
 
             <span className={styles.topic}>{session.topic}</span>
           </div>

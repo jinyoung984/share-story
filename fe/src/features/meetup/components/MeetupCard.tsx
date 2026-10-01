@@ -23,8 +23,6 @@ function MeetupCard({ meetup }: MeetupCardProps) {
         <span className={`${styles.status} ${styles[getStatusClassName(meetup.status)]}`}>
           {meetup.status}
         </span>
-
-        <span className={styles.genre}>{meetup.genre}</span>
       </div>
 
       <div className={styles.content}>
