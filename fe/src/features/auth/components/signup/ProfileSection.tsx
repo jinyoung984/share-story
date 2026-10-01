@@ -5,19 +5,19 @@ import styles from './SignupFormSection.module.css';
 
 interface ProfileSectionProps {
   gender: Gender | '';
-  birthday: string;
+  age_group: string;
 
   onGenderChange: (value: Gender) => void;
-  onBirthdayChange: (value: string) => void;
+  onAgeGroupChange: (value: string) => void;
 }
 
 const GENDERS: Gender[] = ['남', '여'];
 
 function ProfileSection({
   gender,
-  birthday,
+  age_group,
   onGenderChange,
-  onBirthdayChange,
+  onAgeGroupChange,
 }: ProfileSectionProps) {
   return (
     <FormSection number={5} title="성별 / 생년월일">
@@ -43,12 +43,12 @@ function ProfileSection({
         </div>
 
         <TextInput
-          id="signup-birthday"
+          id="age_group"
           aria-label="생년월일"
-          name="birthday"
+          name="age_group"
           type="text"
-          value={birthday}
-          onChange={(event) => onBirthdayChange(event.target.value)}
+          value={age_group}
+          onChange={(event) => onAgeGroupChange(event.target.value)}
           placeholder="YYYY.MM.DD"
           className={styles.input}
           autoComplete="bday"

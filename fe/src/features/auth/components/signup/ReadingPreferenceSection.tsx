@@ -1,17 +1,17 @@
 import { FormSection } from '../../../../shared/ui';
-import type { PreferredCategory, ReadingAmount } from '../../types/signup';
+import type { PreferredGenre, ReadingAmount } from '../../types/signup';
 
 import styles from './SignupFormSection.module.css';
 
 interface ReadingPreferenceSectionProps {
-  categories: PreferredCategory[];
+  genres: PreferredGenre[];
   readingAmount: ReadingAmount | '';
 
-  onCategoriesChange: (categories: PreferredCategory[]) => void;
+  onGenreChange: (genres: PreferredGenre[]) => void;
   onReadingAmountChange: (readingAmount: ReadingAmount) => void;
 }
 
-const CATEGORIES: { value: PreferredCategory; label: string }[] = [
+const GENRES: { value: PreferredGenre; label: string }[] = [
   { value: 'NOVEL', label: '소설' },
   { value: 'ECONOMY_BUSINESS', label: '경제·경영' },
   { value: 'SELF_DEVELOPMENT', label: '자기계발' },
@@ -29,17 +29,17 @@ const CATEGORIES: { value: PreferredCategory; label: string }[] = [
 const READING_AMOUNTS: ReadingAmount[] = ['1~2권', '3~4권', '4~5권', '5~6권'];
 
 function ReadingPreferenceSection({
-  categories,
+  genres,
   readingAmount,
-  onCategoriesChange,
+  onGenreChange,
   onReadingAmountChange,
 }: ReadingPreferenceSectionProps) {
-  const handleCategoryToggle = (category: PreferredCategory) => {
-    const nextCategories = categories.includes(category)
-      ? categories.filter((selectedCategory) => selectedCategory !== category)
-      : [...categories, category];
+  const handleGenreToggle = (genre: PreferredGenre) => {
+    const nextGenres = genres.includes(genre)
+      ? genres.filter((selectedGenre) => selectedGenre !== genre)
+      : [...genres, genre];
 
-    onCategoriesChange(nextCategories);
+    onGenreChange(nextGenres);
   };
 
   return (
@@ -47,15 +47,15 @@ function ReadingPreferenceSection({
       <p className={styles.fieldLabel}>선호 카테고리 (복수 선택 가능)</p>
 
       <div className={styles.preferenceGroup}>
-        {CATEGORIES.map(({ value: category, label }) => {
-          const isSelected = categories.includes(category);
+        {GENRES.map(({ value: genre, label }) => {
+          const isSelected = genres.includes(genre);
 
           return (
             <button
-              key={category}
+              key={genre}
               type="button"
               className={`${styles.optionButton} ${isSelected ? styles.optionButtonSelected : ''}`}
-              onClick={() => handleCategoryToggle(category)}
+              onClick={() => handleGenreToggle(genre)}
               aria-pressed={isSelected}
             >
               {label}

@@ -2,29 +2,29 @@ import { FormSection, Button, TextInput, Notice } from '../../../../shared/ui';
 import styles from './SignupFormSection.module.css';
 
 interface AccountSectionProps {
-  id: string;
+  user_id: string;
   message: string;
-  onIdChange: (value: string) => void;
-  onIdCheck: () => void;
+  onUserIdChange: (value: string) => void;
+  onUserIdCheck: () => void;
 }
 
-function AccountSection({ id, message, onIdChange, onIdCheck }: AccountSectionProps) {
+function AccountSection({ user_id, message, onUserIdChange, onUserIdCheck }: AccountSectionProps) {
   return (
     <FormSection number={1} title="아이디">
       <div className={styles.row}>
         <TextInput
           aria-label="아이디"
-          id="signup-id"
-          name="id"
+          id="user_id"
+          name="user_id"
           type="text"
-          value={id}
-          onChange={(event) => onIdChange(event.target.value)}
+          value={user_id}
+          onChange={(event) => onUserIdChange(event.target.value)}
           placeholder="아이디를 입력해 주세요"
           className={`${styles.input} ${styles.flexInput}`}
-          autoComplete="username"
+          autoComplete="user_id"
         />
 
-        <Button type="button" className={styles.checkButton} onClick={onIdCheck}>
+        <Button type="button" className={styles.checkButton} onClick={onUserIdCheck}>
           중복확인
         </Button>
       </div>

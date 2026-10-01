@@ -9,10 +9,7 @@ const baseConfig = {
   dialect: process.env.DIALECT || 'postgres',
 
   dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
+    ssl: process.env.DB_SSL === 'false' ? false : { require: true, rejectUnauthorized: false },
   },
 };
 

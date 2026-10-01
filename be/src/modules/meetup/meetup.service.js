@@ -1,6 +1,6 @@
 const db = require('../../models/index');
 const { Op } = require('sequelize');
-const { sendMail } = require('../../common/services/mailer.service');
+// const { sendMail } = require('../../common/services/mailer.service');
 
 const throwHttpError = (status, message) => {
   const error = new Error(message);
@@ -21,7 +21,7 @@ const toMeetupDocument = ({ meetup, sessions }) => ({
     max_capacity: meetup.max_capacity,
     deadline: meetup.deadline,
     status: meetup.status,
-    created_at: meetup.created_at
+    created_at: meetup.created_at,
   },
   sessions: sessions.map((session) => ({
     session_id: session.session_id,
@@ -33,20 +33,20 @@ const toMeetupDocument = ({ meetup, sessions }) => ({
     sch_time: session.sch_time,
     zoom_url: session.zoom_url,
     zoom_password: session.zoom_password,
-    status: session.status
-  }))
+    status: session.status,
+  })),
 });
 
 /* Meetup과 회차별 Session(4회)을 하나의 트랜잭션으로 생성한다. */
 
 async function createMeetup({ leaderId, payload }) {
-console.log('Checking leader with leaderId:', leaderId);
-   const leader = await db.User.findByPk(leaderId);
+  console.log('Checking leader with leaderId:', leaderId);
+  const leader = await db.User.findByPk(leaderId);
   if (!leader) {
     console.log('Leader not found for leaderId:', leaderId);
     throwHttpError(404, '모임장을 찾을 수 없습니다.');
   }
-console.log('Creating meetup with leaderId:', leaderId, 'and payload:', payload);
+  console.log('Creating meetup with leaderId:', leaderId, 'and payload:', payload);
   return db.sequelize.transaction(async (t) => {
     const meetup = await db.Meetup.create(
       {
@@ -61,9 +61,9 @@ console.log('Creating meetup with leaderId:', leaderId, 'and payload:', payload)
         deadline: payload.deadline,
         status: 'RECRUITING',
         created_user_id: leaderId,
-        updated_user_id: leaderId
+        updated_user_id: leaderId,
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     const sessionKeySet = new Set();
@@ -89,9 +89,9 @@ console.log('Creating meetup with leaderId:', leaderId, 'and payload:', payload)
         zoom_password: session.zoom_password ?? null,
         status: 'SCHEDULED',
         created_user_id: leaderId,
-        updated_user_id: leaderId
+        updated_user_id: leaderId,
       })),
-      { transaction: t }
+      { transaction: t },
     );
 
     return toMeetupDocument({ meetup, sessions });
@@ -99,7 +99,14 @@ console.log('Creating meetup with leaderId:', leaderId, 'and payload:', payload)
 }
 
 async function updateMeetup({ meetupId, userId, payload }) {
-  console.log('Updating meetup with meetupId:', meetupId, 'userId:', userId, 'and payload:', payload);//input log
+  console.log(
+    'Updating meetup with meetupId:',
+    meetupId,
+    'userId:',
+    userId,
+    'and payload:',
+    payload,
+  ); //input log
   const meetup = await db.Meetup.findByPk(meetupId);
   if (!meetup) {
     throwHttpError(404, '모임을 찾을 수 없습니다.');
@@ -112,7 +119,16 @@ async function updateMeetup({ meetupId, userId, payload }) {
   return db.sequelize.transaction(async (t) => {
     const meetupPatch = payload.meetup || payload;
     const meetupUpdates = {};
-    ['title', 'description', 'book_title', 'book_image_url', 'price', 'min_capacity', 'max_capacity', 'deadline'].forEach((field) => {
+    [
+      'title',
+      'description',
+      'book_title',
+      'book_image_url',
+      'price',
+      'min_capacity',
+      'max_capacity',
+      'deadline',
+    ].forEach((field) => {
       if (meetupPatch[field] !== undefined) {
         meetupUpdates[field] = meetupPatch[field];
       }
@@ -129,11 +145,22 @@ async function updateMeetup({ meetupId, userId, payload }) {
           throwHttpError(404, `session_id ${sessionPatch.session_id}를 찾을 수 없습니다.`);
         }
         if (Number(session.meetup_id) !== meetupId) {
-          throwHttpError(400, `session_id ${sessionPatch.session_id}는 meetup_id ${meetupId} 소속이 아닙니다.`);
+          throwHttpError(
+            400,
+            `session_id ${sessionPatch.session_id}는 meetup_id ${meetupId} 소속이 아닙니다.`,
+          );
         }
 
         const updates = {};
-        ['session_number', 'topic', 'sch_date', 'sch_day', 'sch_time', 'zoom_url', 'zoom_password'].forEach((field) => {
+        [
+          'session_number',
+          'topic',
+          'sch_date',
+          'sch_day',
+          'sch_time',
+          'zoom_url',
+          'zoom_password',
+        ].forEach((field) => {
           if (sessionPatch[field] !== undefined) {
             updates[field] = sessionPatch[field];
           }
@@ -151,7 +178,7 @@ async function updateMeetup({ meetupId, userId, payload }) {
     const refreshedSessions = await db.Session.findAll({
       where: { meetup_id: meetupId },
       order: [['session_number', 'ASC']],
-      transaction: t
+      transaction: t,
     });
     return toMeetupDocument({ meetup: refreshedMeetup, sessions: refreshedSessions });
   });
@@ -181,7 +208,7 @@ async function listMeetups({ page = 1, limit = 10, keyword, status }) {
       'max_capacity',
       'deadline',
       'status',
-      'created_at'
+      'created_at',
     ],
     include: [
       { model: db.User, attributes: ['name'] },
@@ -190,13 +217,13 @@ async function listMeetups({ page = 1, limit = 10, keyword, status }) {
         model: db.Session,
         required: false,
         where: { status: { [Op.ne]: 'CANCELLED' } },
-        attributes: ['session_number', 'sch_date', 'sch_day', 'sch_time']
-      }
+        attributes: ['session_number', 'sch_date', 'sch_day', 'sch_time'],
+      },
     ],
     order: [['created_at', 'DESC']],
     offset: (safePage - 1) * safeLimit,
     limit: safeLimit,
-    distinct: true
+    distinct: true,
   });
 
   const items = rows.map((meetup) => {
@@ -219,7 +246,7 @@ async function listMeetups({ page = 1, limit = 10, keyword, status }) {
       sch_st_date: startSession?.sch_date || null,
       sch_ed_date: endSession?.sch_date || null,
       sch_day: startSession?.sch_day || null,
-      sch_time: startSession?.sch_time || null
+      sch_time: startSession?.sch_time || null,
     };
   });
 
@@ -228,13 +255,13 @@ async function listMeetups({ page = 1, limit = 10, keyword, status }) {
     limit: safeLimit,
     total: count,
     nextPage: safePage * safeLimit < count ? safePage + 1 : null,
-    items
+    items,
   };
 }
 
 async function getMeetupDetail({ meetupId }) {
   const meetup = await db.Meetup.findByPk(meetupId, {
-    include: [{ model: db.User, attributes: ['user_id', 'name'] }]
+    include: [{ model: db.User, attributes: ['user_id', 'name'] }],
   });
   if (!meetup) {
     throwHttpError(404, '모임을 찾을 수 없습니다.');
@@ -254,13 +281,18 @@ async function getMeetupDetail({ meetupId }) {
       'sch_ed_time',
       'zoom_url',
       'zoom_password',
-      'status'
-    ]
+      'status',
+    ],
   });
 
   const applies = await db.Apply.findAll({
     where: { meetup_id: meetupId },
-    include: [{ model: db.User, attributes: ['genre_1', 'genre_2', 'monthly_reading_volume', 'age_group', 'gender'] }]
+    include: [
+      {
+        model: db.User,
+        attributes: ['genre_1', 'genre_2', 'monthly_reading_volume', 'age_group', 'gender'],
+      },
+    ],
   });
 
   const stats = {
@@ -268,7 +300,7 @@ async function getMeetupDetail({ meetupId }) {
     genre_2: {},
     monthly_reading_volume: {},
     age_group: {},
-    gender: {}
+    gender: {},
   };
 
   for (const apply of applies) {
@@ -293,11 +325,11 @@ async function getMeetupDetail({ meetupId }) {
       max_capacity: meetup.max_capacity,
       deadline: meetup.deadline,
       status: meetup.status,
-      leader_name: meetup.User?.name || null
+      leader_name: meetup.User?.name || null,
     },
     sessions,
     apply_count: applies.length,
-    apply_user_stats: stats
+    apply_user_stats: stats,
   };
 }
 
@@ -325,14 +357,14 @@ async function applyMeetup({ meetupId, userId }) {
     user_id: userId,
     status: 'ING',
     created_user_id: userId,
-    updated_user_id: userId
+    updated_user_id: userId,
   });
 
   return {
     apply_id: apply.apply_id,
     meetup_id: apply.meetup_id,
     user_id: apply.user_id,
-    payment_status: 'PENDING'
+    payment_status: 'PENDING',
   };
 }
 
@@ -352,7 +384,7 @@ const buildZoomMailTemplate = ({ userName, schDate, schDay, schTime, zoomUrl, zo
     `- Zoom 비밀번호: ${zoomPassword}`,
     '',
     '모임 시작 5분 전 미리 접속 부탁드립니다.',
-    '감사합니다.'
+    '감사합니다.',
   ].join('\n');
   return { subject, body };
 };
@@ -364,23 +396,31 @@ async function sendZoomMailBatch({ now = new Date() } = {}) {
   const rows = await db.Logbook.findAll({
     where: {
       submitted_at: { [Op.ne]: null },
-      is_approved: true
+      is_approved: true,
     },
     include: [
       {
         model: db.Session,
         where: {
           status: 'SCHEDULED',
-          sch_date: { [Op.between]: [today, twoDaysLater] }
+          sch_date: { [Op.between]: [today, twoDaysLater] },
         },
-        attributes: ['session_id', 'sch_date', 'sch_day', 'sch_time', 'zoom_url', 'zoom_password', 'meetup_id']
+        attributes: [
+          'session_id',
+          'sch_date',
+          'sch_day',
+          'sch_time',
+          'zoom_url',
+          'zoom_password',
+          'meetup_id',
+        ],
       },
       {
         model: db.Apply,
         attributes: ['apply_id', 'meetup_id', 'user_id'],
-        include: [{ model: db.User, attributes: ['name', 'email'] }]
-      }
-    ]
+        include: [{ model: db.User, attributes: ['name', 'email'] }],
+      },
+    ],
   });
 
   const candidates = rows.map((logbook) => ({
@@ -390,7 +430,7 @@ async function sendZoomMailBatch({ now = new Date() } = {}) {
     zoom_password: logbook.Session?.zoom_password || null,
     sch_date: logbook.Session?.sch_date || null,
     sch_day: logbook.Session?.sch_day || null,
-    sch_time: logbook.Session?.sch_time || null
+    sch_time: logbook.Session?.sch_time || null,
   }));
 
   const sendableTargets = [];
@@ -405,7 +445,7 @@ async function sendZoomMailBatch({ now = new Date() } = {}) {
     if (missingFields.length > 0) {
       skippedTargets.push({
         ...candidate,
-        skipped_reason: `missing:${missingFields.join(',')}`
+        skipped_reason: `missing:${missingFields.join(',')}`,
       });
       continue;
     }
@@ -416,13 +456,13 @@ async function sendZoomMailBatch({ now = new Date() } = {}) {
       schDay: candidate.sch_day,
       schTime: candidate.sch_time,
       zoomUrl: candidate.zoom_url,
-      zoomPassword: candidate.zoom_password
+      zoomPassword: candidate.zoom_password,
     });
 
     sendableTargets.push({
       ...candidate,
       mail_subject: template.subject,
-      mail_body: template.body
+      mail_body: template.body,
     });
   }
 
@@ -434,18 +474,18 @@ async function sendZoomMailBatch({ now = new Date() } = {}) {
       const result = await sendMail({
         to: target.user_email,
         subject: target.mail_subject,
-        text: target.mail_body
+        text: target.mail_body,
       });
 
       sentTargets.push({
         ...target,
         message_id: result.messageId || null,
-        accepted: result.accepted || []
+        accepted: result.accepted || [],
       });
     } catch (error) {
       failedTargets.push({
         ...target,
-        failed_reason: error.message
+        failed_reason: error.message,
       });
     }
   }
@@ -457,7 +497,7 @@ async function sendZoomMailBatch({ now = new Date() } = {}) {
     failed_count: failedTargets.length,
     targets: sentTargets,
     skipped_targets: skippedTargets,
-    failed_targets: failedTargets
+    failed_targets: failedTargets,
   };
 }
 
@@ -468,9 +508,9 @@ async function closePastSessions({ now = new Date() } = {}) {
     {
       where: {
         status: 'SCHEDULED',
-        sch_date: { [Op.lt]: today }
-      }
-    }
+        sch_date: { [Op.lt]: today },
+      },
+    },
   );
 
   return { completed_count: affected };
@@ -481,9 +521,9 @@ async function sendLogbookMailBatch({ now = new Date() } = {}) {
   const targetSession = await db.Session.findOne({
     where: {
       status: 'IN_PROGRESS',
-      sch_date: { [Op.gt]: today }
+      sch_date: { [Op.gt]: today },
     },
-    order: [['sch_date', 'ASC']]
+    order: [['sch_date', 'ASC']],
   });
 
   if (!targetSession) {
@@ -492,7 +532,7 @@ async function sendLogbookMailBatch({ now = new Date() } = {}) {
 
   const applies = await db.Apply.findAll({
     where: { meetup_id: targetSession.meetup_id },
-    include: [{ model: db.User, attributes: ['name', 'email'] }]
+    include: [{ model: db.User, attributes: ['name', 'email'] }],
   });
 
   const targets = applies.map((apply) => ({
@@ -500,7 +540,7 @@ async function sendLogbookMailBatch({ now = new Date() } = {}) {
     user_email: apply.User?.email || null,
     sch_date: targetSession.sch_date,
     sch_day: targetSession.sch_day,
-    sch_time: targetSession.sch_time
+    sch_time: targetSession.sch_time,
   }));
 
   return { processed_count: targets.length, targets };
@@ -514,5 +554,5 @@ module.exports = {
   applyMeetup,
   sendZoomMailBatch,
   closePastSessions,
-  sendLogbookMailBatch
+  sendLogbookMailBatch,
 };

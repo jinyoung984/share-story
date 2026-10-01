@@ -37,9 +37,13 @@ app.get('/ping', (req, res) => {
 app.use('/session', sessionRoutes);
 
 // Meetup API
-app.use('/meetup', meetupRouter);
+app.use('/meetup', require('./modules/member/meetup.routes'), meetupRouter);
 
 app.use('/auth', authRouter);
+// 마이페이지 및 참여자 기능
+app.use('/member', require('./modules/member/member.routes'));
+app.use('/logbook', require('./modules/logbook/logbook.routes'));
+app.use('/review', require('./modules/review/review.routes'));
 // Error Handler는 일반 route 등록 이후에 위치
 app.use(errorHandler);
 

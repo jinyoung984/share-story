@@ -58,6 +58,10 @@ function HeroSection() {
               </svg>
             </Link>
 
+            <Link to="/login" className={styles.secondaryButton}>
+              로그인
+            </Link>
+
             <Link to="/signup" className={styles.secondaryButton}>
               회원가입
             </Link>
