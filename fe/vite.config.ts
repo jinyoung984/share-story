@@ -1,31 +1,19 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-
-const targetUrl = 'http://localhost:3000';
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173, // Vite 클라이언트 포트
-    proxy: {
-      // /member 로 시작하는 요청을 localhost:3000 으로 포워딩
-      '/meetup': {
-        target: targetUrl,
-        changeOrigin: true,
-      },
-      // /product 로 시작하는 요청 처리
-      '/session': {
-        target: targetUrl,
-        changeOrigin: true,
-      },
-      // '/auth'나 '/api'로 시작하는 요청을 백엔드 서버로 프록시
-      '/auth': {
-        target: targetUrl,
-        changeOrigin: true,
-      },
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const target = env.VITE_PROXY_TARGET || 'http://localhost:3000';
+  return {
+    plugins: [react()],
+    server: {
+      port: 5173,
+      // /meetup API만 프록시하고 /meetups 같은 FE 화면 경로는 가로채지 않도록 경계 지정
+      proxy: Object.fromEntries(
+        ['auth', 'meetup', 'member', 'session', 'logbook', 'review'].map((path) => [
+          `^/${path}(?:/|$)`,
+          { target, changeOrigin: true },
+        ]),
+      ),
     },
-  },
+  };
 });
-
-
