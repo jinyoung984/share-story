@@ -1,39 +1,81 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, type RouteObject } from 'react-router-dom';
 import AppShell from '../layout/AppShell';
+import MyPageLayout from '../layout/MyPageLayout';
+import RequireAuth from './RequireAuth';
 import HomePage from '../../pages/home/HomePage';
+import LoginPage from '../../pages/auth/LoginPage';
+import SignupPage from '../../pages/auth/SignupPage';
 import MeetupListPage from '../../pages/meetup/MeetupListPage';
 import MeetupDetailPage from '../../pages/meetup/MeetupDetailPage';
 import MeetupCreatePage from '../../pages/meetup/MeetupCreatePage';
 import MeetupEditPage from '../../pages/meetup/MeetupEditPage';
-import MyPage from '../../pages/journal/MyPage';
-import LogbookReviewPage from '../../pages/logbook/LogbookReviewPage';
-import SignupPage from '../../pages/auth/SignupPage';
-import LoginPage from '../../pages/auth/LoginPage';
-import ReviewCreatePage from '../../pages/review/ReviewCreatePage';
 import ReviewListPage from '../../pages/review/ReviewListPage';
+import ReviewCreatePage from '../../pages/review/ReviewCreatePage';
 import ReviewEditPage from '../../pages/review/ReviewEditPage';
+import MyLogbooksPage from '../../pages/logbook/MyLogbooksPage';
+import LogbookReviewPage from '../../pages/logbook/LogbookReviewPage';
 import CaptainVoyagesPage from '../../pages/journal/CaptainVoyagesPage';
+import JournalPage from '../../pages/mypage/JournalPage';
+import ProfilePage from '../../pages/mypage/ProfilePage';
 import { EmptyState, ActionLink } from '../../shared/ui';
 
-export const routes = [
+// 이전 마이페이지 주소로 들어온 링크·북마크를 새 주소로 이동
+const legacyMyPagePaths = ['/my-journal', '/my-journal/review', '/my-page'];
+
+export const routes: RouteObject[] = [
   {
     element: <AppShell />,
     children: [
+      // 로그인 없이 볼 수 있는 화면
       { path: '/', element: <HomePage /> },
-      { path: '/meetups', element: <MeetupListPage /> },
-      { path: '/meetups/create', element: <MeetupCreatePage /> },
-      { path: '/meetups/:meetupId', element: <MeetupDetailPage /> },
-      { path: '/meetups/:meetupId/edit', element: <MeetupEditPage /> },
-      { path: '/meetups/:meetupId/reviews', element: <ReviewListPage /> },
-      { path: '/meetups/:meetupId/reviews/create', element: <ReviewCreatePage /> },
-      { path: '/meetups/:meetupId/reviews/:reviewId/edit', element: <ReviewEditPage /> },
-      { path: '/meetups/:meetupId/logbooks/review', element: <LogbookReviewPage /> },
-      { path: '/my-journal', element: <MyPage /> },
-      { path: '/my-page', element: <Navigate to="/my-journal" replace /> },
-      { path: '/my-journal/review', element: <Navigate to="/my-journal" replace /> },
-      { path: '/captain/voyages', element: <CaptainVoyagesPage /> },
-      { path: '/signup', element: <SignupPage /> },
       { path: '/login', element: <LoginPage /> },
+      { path: '/signup', element: <SignupPage /> },
+      { path: '/meetups', element: <MeetupListPage /> },
+      ...legacyMyPagePaths.map((path) => ({
+        path,
+        element: <Navigate to="/mypage/journal" replace />,
+      })),
+
+      // 로그인이 필요한 화면
+      {
+        element: <RequireAuth />,
+        children: [
+          { path: '/meetups/create', element: <MeetupCreatePage /> },
+          {
+            path: '/meetups/:meetupId',
+            children: [
+              { index: true, element: <MeetupDetailPage /> },
+              { path: 'edit', element: <MeetupEditPage /> },
+              {
+                path: 'reviews',
+                children: [
+                  { index: true, element: <ReviewListPage /> },
+                  { path: 'create', element: <ReviewCreatePage /> },
+                  { path: ':reviewId/edit', element: <ReviewEditPage /> },
+                ],
+              },
+              {
+                path: 'logbooks',
+                children: [
+                  { index: true, element: <MyLogbooksPage /> },
+                  { path: 'review', element: <LogbookReviewPage /> },
+                ],
+              },
+            ],
+          },
+          { path: '/captain/voyages', element: <CaptainVoyagesPage /> },
+          {
+            path: '/mypage',
+            element: <MyPageLayout />,
+            children: [
+              { index: true, element: <Navigate to="journal" replace /> },
+              { path: 'journal', element: <JournalPage /> },
+              { path: 'profile', element: <ProfilePage /> },
+            ],
+          },
+        ],
+      },
+
       {
         path: '*',
         element: (

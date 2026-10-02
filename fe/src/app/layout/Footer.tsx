@@ -15,7 +15,7 @@ const SERVICE_LINKS = [
   },
   {
     label: '나의 항해 일지',
-    to: '/my-journal',
+    to: '/mypage/journal',
   },
 ];
 
