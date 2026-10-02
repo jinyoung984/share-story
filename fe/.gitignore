@@ -30,4 +30,4 @@ dist-ssr
 
 # Local-only backups and tests
 /archive/styles/
-/tests/
+/tests/*
