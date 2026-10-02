@@ -1,96 +1,72 @@
-import { Notice } from '../../../../shared/ui';
-import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '../../../auth';
+import { meetupStatus, type MemberMeetup, type MemberRole } from '../../../member';
+import { useProfile } from '../../../user';
+import { useAllPages } from '../../../../shared/hooks/useResource';
+import { PageContainer, PageHeading, ActionLink, EmptyState } from '../../../../shared/ui';
+import RequestState from '../../../../shared/ui/RequestState';
+import styles from '../../../../shared/ui/Voyage.module.css';
 
-import { captainJournalMocks, crewJournalMocks } from '../../mocks/journalMocks';
-import { currentUserMock } from '../../../user';
-
-import type { CaptainJournalTab, CrewJournalTab, JournalView } from '../../types/journal';
-
-import CaptainJournalSection from './CaptainJournalSection';
-import CrewJournalSection from './CrewJournalSection';
-import JournalHeader from './JournalHeader';
-
-import styles from './JournalDashboard.module.css';
-
-const CREW_TABS: CrewJournalTab[] = ['전체', '승선 대기', '항해 중', '입항 완료'];
-
-const CAPTAIN_TABS: CaptainJournalTab[] = ['전체', '모집 중', '모집 마감', '종료'];
-
-function JournalDashboard({ initialView = 'crew' }: { initialView?: JournalView }) {
-  const [message, setMessage] = useState('');
-  const [view, setView] = useState<JournalView>(initialView);
-
-  const [crewTab, setCrewTab] = useState<CrewJournalTab>('항해 중');
-
-  const [captainTab, setCaptainTab] = useState<CaptainJournalTab>('전체');
-
-  const [logbookText, setLogbookText] = useState<Record<string, string>>({});
-
-  const [openLogbookMeetupId, setOpenLogbookMeetupId] = useState<number | null>(null);
-
-  const filteredCrewMeetups =
-    crewTab === '전체'
-      ? crewJournalMocks
-      : crewJournalMocks.filter((meetup) => meetup.status === crewTab);
-
-  const filteredCaptainMeetups =
-    captainTab === '전체'
-      ? captainJournalMocks
-      : captainJournalMocks.filter((meetup) => meetup.status === captainTab);
-
-  const getLogbookKey = (meetupId: number, sessionNumber: number) => `${meetupId}-${sessionNumber}`;
-
-  const handleLogbookChange = (meetupId: number, sessionNumber: number, value: string) => {
-    const key = getLogbookKey(meetupId, sessionNumber);
-
-    setLogbookText((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
-  const handleLogbookSave = (meetupId: number, sessionNumber: number) => {
-    const key = getLogbookKey(meetupId, sessionNumber);
-
-    setMessage(
-      logbookText[key]?.trim()
-        ? '로그북 저장은 아직 준비 중입니다. 입력 내용은 이 화면을 떠나면 사라집니다.'
-        : '로그북 내용을 입력해 주세요.',
-    );
-  };
-
+export default function JournalDashboard({ initialView = 'crew' }: { initialView?: MemberRole }) {
+  const [search, setSearch] = useSearchParams();
+  const role =
+    search.get('role') === 'captain'
+      ? 'captain'
+      : search.get('role') === 'crew'
+        ? 'crew'
+        : initialView;
+  const { user } = useAuth();
+  const profile = useProfile();
+  // URL의 role은 선택한 탭을 복원하는 용도이며, 조회 요청은 역할별 전용 API로 보냄
+  const result = useAllPages<MemberMeetup>(`/member/meetups/${role}`);
   return (
-    <div className={styles.page}>
-      <JournalHeader
-        user={currentUserMock}
-        view={view}
-        crewTab={crewTab}
-        captainTab={captainTab}
-        crewTabs={CREW_TABS}
-        captainTabs={CAPTAIN_TABS}
-        onViewChange={setView}
-        onCrewTabChange={setCrewTab}
-        onCaptainTabChange={setCaptainTab}
+    <PageContainer>
+      <PageHeading
+        eyebrow="MY VOYAGE"
+        title="나의 항해 일지"
+        description={`${profile.data?.name || user?.user_id || '회원'}님, 함께 읽고 나눈 이야기를 이어가세요.`}
       />
-
-      <div className={styles.content}>
-        {message && <Notice>{message}</Notice>}
-        {view === 'crew' ? (
-          <CrewJournalSection
-            meetups={filteredCrewMeetups}
-            logbookText={logbookText}
-            openLogbookMeetupId={openLogbookMeetupId}
-            onLogbookChange={handleLogbookChange}
-            onLogbookOpen={setOpenLogbookMeetupId}
-            onLogbookClose={() => setOpenLogbookMeetupId(null)}
-            onLogbookSave={handleLogbookSave}
-          />
-        ) : (
-          <CaptainJournalSection meetups={filteredCaptainMeetups} />
-        )}
+      <div className={styles.tabs} aria-label="모임 역할 선택">
+        <button aria-pressed={role === 'crew'} onClick={() => setSearch({ role: 'crew' })}>
+          크루로 참여한 모임
+        </button>
+        <button aria-pressed={role === 'captain'} onClick={() => setSearch({ role: 'captain' })}>
+          캡틴으로 만든 모임
+        </button>
       </div>
-    </div>
+      <RequestState {...result} retry={result.reload} />
+      {result.data?.length === 0 && (
+        <EmptyState
+          title={role === 'captain' ? '아직 만든 모임이 없어요.' : '아직 참여한 모임이 없어요.'}
+          description="새로운 책과 사람을 만나 항해를 시작해 보세요."
+          action={
+            <ActionLink to={role === 'captain' ? '/meetups/create' : '/meetups'}>
+              {role === 'captain' ? '모임 만들기' : '모임 찾아보기'}
+            </ActionLink>
+          }
+        />
+      )}
+      <div className={styles.grid}>
+        {result.data?.map((meetup) => (
+          <article className={styles.card} key={meetup.meetup_id}>
+            {meetup.book_image_url && (
+              <img className={styles.cover} src={meetup.book_image_url} alt="" />
+            )}
+            <span className={styles.badge}>{meetupStatus[meetup.status]}</span>
+            <h2>{meetup.title}</h2>
+            <p>{meetup.book_title}</p>
+            <div className={styles.actions}>
+              <ActionLink
+                to={`/meetups/${meetup.meetup_id}/logbooks${role === 'captain' ? '/review' : ''}`}
+              >
+                {role === 'captain' ? '크루 로그북 확인' : '로그북 작성·조회'}
+              </ActionLink>
+              <ActionLink to={`/meetups/${meetup.meetup_id}`}>모임 상세</ActionLink>
+              <ActionLink to={`/meetups/${meetup.meetup_id}/reviews`}>항해 후기</ActionLink>
+            </div>
+          </article>
+        ))}
+      </div>
+    </PageContainer>
   );
 }
-
-export default JournalDashboard;
