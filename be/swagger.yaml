@@ -1296,6 +1296,42 @@ paths:
             minimum: 1
             maximum: 100
             default: 10
+  '/member/me':
+    get:
+      tags:
+        - Member
+      operationId: getMyProfile
+      summary: 마이페이지 — 내 회원 정보
+      description:
+        토큰의 user_id로 로그인 사용자의 아이디·이름·이메일을 조회합니다. 비밀번호 등 민감 정보는 조회·반환하지
+        않습니다. 로그인 응답의 document 대신 이 API로 화면에 표시할 회원 정보를 가져옵니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  document:
+                    '$ref': '#/components/schemas/MemberProfile'
+                required:
+                  - success
+                  - document
+        '401':
+          '$ref': '#/components/responses/Error401'
+        '404':
+          '$ref': '#/components/responses/Error404'
+        '500':
+          '$ref': '#/components/responses/Error500'
+        '504':
+          '$ref': '#/components/responses/Error504'
 components:
   securitySchemes:
     bearerAuth:
@@ -1311,13 +1347,13 @@ components:
           schema:
             '$ref': '#/components/schemas/Error'
     Error401:
-      description: Bearer 인증 헤더 누락 또는 로그인 사용자 식별자 없음
+      description: Bearer 인증 헤더 누락, 유효하지 않거나 만료된 토큰, 또는 로그인 사용자 식별자 없음
       content:
         application/json:
           schema:
             '$ref': '#/components/schemas/Error'
     Error403:
-      description: 유효하지 않은 토큰 또는 권한 없음
+      description: 모임 접근 권한 없음 (토큰 오류는 401)
       content:
         application/json:
           schema:
@@ -2385,6 +2421,21 @@ components:
           description: 삭제된 회원 등 사용자 정보를 조회할 수 없으면 null
         status:
           '$ref': '#/components/schemas/ApplyStatus'
+    MemberProfile:
+      type: object
+      properties:
+        user_id:
+          type: string
+        name:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+      required:
+        - user_id
+        - name
+        - email
 x-unmounted-routes:
   source: src/modules/session/session.routes.js
   description: app.js에 마운트되지 않았으므로 공개 API 주소가 정해져 있지 않습니다. 아래 경로는 라우터 내부 상대 경로입니다.
