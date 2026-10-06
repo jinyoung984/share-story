@@ -1,2 +1,2 @@
-export type { UserProfile } from './types/user';
-export { currentUserMock } from './mocks/userMocks';
+export { default as ProfileView } from './components/ProfileView';
+export { useProfile } from './hooks/useProfile';

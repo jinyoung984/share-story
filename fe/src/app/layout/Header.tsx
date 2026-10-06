@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 
+import { useAuth } from '../../features/auth';
 import logoSrc from '../../shared/assets/logo.png';
 
 import styles from './Header.module.css';
@@ -12,15 +13,24 @@ const NAV_LINKS = [
   },
   {
     label: '나의 항해 일지',
-    to: '/my-journal',
+    to: '/mypage/journal',
   },
 ];
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const closeMenu = () => {
     setMenuOpen(false);
+  };
+
+  // 보호된 화면에서 로그아웃 시 로그인 화면으로 튕기지 않도록 홈으로 이동
+  const handleLogout = () => {
+    closeMenu();
+    logout();
+    navigate('/', { replace: true });
   };
 
   return (
@@ -47,13 +57,31 @@ function Header() {
         </nav>
 
         <div className={styles.desktopActions}>
-          <Link to="/login" className={styles.signupLink}>
-            로그인
-          </Link>
+          {user ? (
+            <>
+              <Link to="/mypage/profile" className={styles.signupLink}>
+                회원정보
+              </Link>
 
-          <Link to="/signup" className={styles.signupLink}>
-            회원가입
-          </Link>
+              <button
+                type="button"
+                className={`${styles.signupLink} ${styles.textButton}`}
+                onClick={handleLogout}
+              >
+                로그아웃
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className={styles.signupLink}>
+                로그인
+              </Link>
+
+              <Link to="/signup" className={styles.signupLink}>
+                회원가입
+              </Link>
+            </>
+          )}
 
           <Link to="/meetups" className={styles.boardButton}>
             승선하기
@@ -95,9 +123,31 @@ function Header() {
           ))}
 
           <div className={styles.mobileActions}>
-            <Link to="/signup" className={styles.mobileSignupLink} onClick={closeMenu}>
-              회원가입
-            </Link>
+            {user ? (
+              <>
+                <Link to="/mypage/profile" className={styles.mobileSignupLink} onClick={closeMenu}>
+                  회원정보
+                </Link>
+
+                <button
+                  type="button"
+                  className={`${styles.mobileSignupLink} ${styles.textButton}`}
+                  onClick={handleLogout}
+                >
+                  로그아웃
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className={styles.mobileSignupLink} onClick={closeMenu}>
+                  로그인
+                </Link>
+
+                <Link to="/signup" className={styles.mobileSignupLink} onClick={closeMenu}>
+                  회원가입
+                </Link>
+              </>
+            )}
 
             <Link to="/meetups" className={styles.mobileBoardButton} onClick={closeMenu}>
               승선하기
